@@ -30,6 +30,14 @@ RUN git clone https://github.com/citusdata/pg_cron.git /tmp/pg_cron \
     && make && make install \
     && cd / && rm -rf /tmp/pg_cron
 
+# Install PL/Python and Python scientific libraries
+ RUN apt-get update && apt-get install -y \
+    postgresql-plpython3-17 \
+    python3-pip \
+    python3-numpy \
+    python3-scipy \
+    && rm -rf /var/lib/apt/lists/*
+
 # Enable extensions in the database
 # These will run when the database is initialized (empty volume)
 COPY --chmod=755 <<EOF /docker-entrypoint-initdb.d/enable-extensions.sql
@@ -39,6 +47,7 @@ CREATE EXTENSION IF NOT EXISTS postgis_topology;
 CREATE EXTENSION IF NOT EXISTS postgis_raster;
 CREATE EXTENSION IF NOT EXISTS pg_cron;
 CREATE EXTENSION IF NOT EXISTS pg_rrule;
+CREATE EXTENSION IF NOT EXISTS plpython3u;
 EOF
 
 # Ensure PostgreSQL uses the same collation version (fixed format)
@@ -46,4 +55,4 @@ ENV LANG=en_US.UTF-8
 ENV LC_ALL=en_US.UTF-8
 
 # Configure pg_cron (applies to new volumes; manual for existing)
-RUN echo "shared_preload_libraries = 'pg_cron'" >> /usr/share/postgresql/postgresql.conf.sample
+RUN echo "shared_preload_libraries = 'pg_cron,vector'" >> /usr/share/postgresql/postgresql.conf
